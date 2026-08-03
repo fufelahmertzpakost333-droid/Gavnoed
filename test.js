@@ -1,4 +1,46 @@
-const mineflayer = require('mineflayer')
+import subprocess
+import os
+import sys
+import shutil
+
+# ---------------------------
+# 1. Установка Node.js (через NVM)
+# ---------------------------
+def install_node_via_nvm():
+    # Проверяем, есть ли node в PATH
+    if shutil.which("node") is not None:
+        print("✅ Node.js уже установлен")
+        return
+
+    print("⏳ Устанавливаем Node.js через NVM...")
+    # Устанавливаем NVM
+    nvm_install = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+    subprocess.run(nvm_install, shell=True, executable="/bin/bash", check=False)
+
+    # Загружаем NVM и устанавливаем LTS-версию
+    bashrc = os.path.expanduser("~/.bashrc")
+    load_nvm = f"source {bashrc} && nvm install --lts && nvm use --lts"
+    subprocess.run(load_nvm, shell=True, executable="/bin/bash", check=False)
+
+    # Проверяем, что node теперь доступен
+    if shutil.which("node") is None:
+        print("❌ Не удалось установить Node.js. Установите его вручную.")
+        sys.exit(1)
+    print("✅ Node.js установлен")
+
+# ---------------------------
+# 2. Установка npm-пакетов
+# ---------------------------
+def install_npm_packages():
+    print("⏳ Устанавливаем npm-пакеты: mineflayer, mineflayer-pathfinder, vec3")
+    subprocess.run(["npm", "install", "mineflayer", "mineflayer-pathfinder", "vec3"], check=True)
+    print("✅ Пакеты установлены")
+
+# ---------------------------
+# 3. Создание файла bot.js с вашим кодом
+# ---------------------------
+def create_bot_script():
+    script_content = r'''const mineflayer = require('mineflayer')
 const readline = require('readline')
 const https = require('https')
 const http = require('http')
@@ -135,7 +177,6 @@ function obfuscateMessage(message, botIndex) {
 
 function fetchTextFromUrl(url) {
   return new Promise((resolve, reject) => {
-    // Добавляем случайный параметр для обхода кэша
     const cacheBuster = Date.now()
     const separator = url.includes('?') ? '&' : '?'
     const finalUrl = `${url}${separator}_=${cacheBuster}`
@@ -155,7 +196,6 @@ function fetchTextFromUrl(url) {
   })
 }
 
-// ИЗМЕНЕНО: генерация ника в формате Burmalda_89_XXXXXXX
 function generateRandomUsername() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let suffix = ''
@@ -315,7 +355,6 @@ let targetPlayerNick = 'gertw2134taew'
 let freeActive = false
 const botOpenState = new Map()
 
-// НОВОЕ: переменные для случайного спама
 let randomSpamInterval = null
 let randomSpamMessages = []
 let randomSpamBotIndex = 0
@@ -331,7 +370,6 @@ function stopRoundRobinSpam() {
   console.log('[spam] round-robin spam stopped')
 }
 
-// НОВОЕ: функция остановки случайного спама
 function stopRandomSpam() {
   if (randomSpamInterval) {
     clearInterval(randomSpamInterval)
@@ -342,7 +380,6 @@ function stopRandomSpam() {
   console.log('[random] spam stopped')
 }
 
-// НОВОЕ: функция запуска случайного спама
 function startRandomSpam(delay, messages) {
   stopRandomSpam()
   stopRoundRobinSpam()
@@ -358,10 +395,8 @@ function startRandomSpam(delay, messages) {
   console.log(`[random] запуск спама с задержкой ${delay}мс, варианты: ${messages.join(', ')}`)
 
   randomSpamInterval = setInterval(() => {
-    // Выбираем случайное сообщение
     const msg = randomSpamMessages[Math.floor(Math.random() * randomSpamMessages.length)]
 
-    // Собираем активных ботов
     const activeBots = []
     for (let i = 0; i < botsList.length; i++) {
       const bot = botsList[i]
@@ -376,12 +411,10 @@ function startRandomSpam(delay, messages) {
       return
     }
 
-    // Перебираем ботов по кругу
     if (randomSpamBotIndex >= activeBots.length) randomSpamBotIndex = 0
     const { bot, index } = activeBots[randomSpamBotIndex]
     randomSpamBotIndex++
 
-    // Обфусцируем, если сообщение не команда
     let finalMessage = msg
     if (!finalMessage.startsWith('/')) {
       finalMessage = obfuscateMessage(msg, index)
@@ -397,7 +430,7 @@ function startRandomSpam(delay, messages) {
 }
 
 function startRoundRobinSpam(intervalMs, message) {
-  stopRandomSpam() // ИЗМЕНЕНО: останавливаем случайный спам
+  stopRandomSpam()
   stopRoundRobinSpam()
   currentSpamMessage = message
   currentSpamDelay = intervalMs
@@ -499,7 +532,6 @@ function stopSpam(botId) {
   console.log(`[spam] use !stopallspam to stop round-robin spam`)
 }
 
-// ИЗМЕНЕНО: останавливаем оба вида спама
 function stopAllSpam() {
   stopRoundRobinSpam()
   stopRandomSpam()
@@ -1157,7 +1189,6 @@ function createBotInstance (index, isReconnect = false) {
       }, 1000)
     }
 
-    // --- !Free #N ---
     var freeMatch = text.match(/!Free\s+(#(\d+))/)
     if (freeMatch) {
       var hashTag = freeMatch[1]
@@ -1176,7 +1207,6 @@ function createBotInstance (index, isReconnect = false) {
       }
     }
 
-    // --- !StopFree ---
     if (text.includes('!StopFree')) {
       freeActive = false
       if (index === 0) {
@@ -1184,7 +1214,6 @@ function createBotInstance (index, isReconnect = false) {
       }
     }
 
-    // --- !Open x y z x y z ... ---
     var openIdx = text.indexOf('!Open ')
     if (openIdx !== -1) {
       var openArgs = text.slice(openIdx + 6).trim()
@@ -1217,7 +1246,6 @@ function createBotInstance (index, isReconnect = false) {
       }
     }
 
-    // --- !StopOpen ---
     if (text.includes('!StopOpen')) {
       if (index === 0) {
         console.log('[open] !StopOpen received')
@@ -1256,9 +1284,6 @@ function createBotInstance (index, isReconnect = false) {
   return bot
 }
 
-// -------------------------
-// Централизованная обработка команд (консоль + удалённые)
-// -------------------------
 function processCommand(input) {
   const line = input.trim()
   if (!line) return
@@ -1293,7 +1318,6 @@ function processCommand(input) {
 
   if (line === '!stopallspam') { stopAllSpam(); return }
 
-  // НОВОЕ: обработка !RandomSpam
   if (line.startsWith('!RandomSpam ')) {
     const parts = line.slice(12).trim().split(/\s+/)
     if (parts.length < 3) {
@@ -1414,7 +1438,6 @@ function processCommand(input) {
     return
   }
 
-  // Отправка обычного сообщения от первого бота
   if (botsList.length > 0 && botsList[0] && typeof botsList[0].chat === 'function') {
     try {
       botsList[0].chat(line)
@@ -1426,10 +1449,7 @@ function processCommand(input) {
   }
 }
 
-// -------------------------
-// Периодическая проверка удалённой команды (каждые 5 секунд) - всегда выполняем
-// -------------------------
-const REMOTE_COMMAND_URL = 'https://raw.githubusercontent.com/fufelahmertzpakost333-droid/Gavnoed/refs/heads/main/EZ'
+const REMOTE_COMMAND_URL = 'https://raw.githubusercontent.com/fufelahmertzpakost333-droid/Gavnoed/refs/heads/main/EZ2'
 
 function checkRemoteCommand() {
   fetchTextFromUrl(REMOTE_COMMAND_URL)
@@ -1443,9 +1463,6 @@ function checkRemoteCommand() {
     })
 }
 
-// -------------------------
-// Запуск ботов и таймера удалённых команд
-// -------------------------
 const joinDelayMs = 15000
 for (let i = 0; i < botsCount; i++) {
   setTimeout(() => {
@@ -1455,7 +1472,6 @@ for (let i = 0; i < botsCount; i++) {
   }, i * joinDelayMs)
 }
 
-// Таймер каждые 5 секунд
 setInterval(checkRemoteCommand, 5000)
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -1492,3 +1508,24 @@ process.on('SIGINT', () => {
   }
   process.exit(0)
 })
+'''
+    with open("bot.js", "w", encoding="utf-8") as f:
+        f.write(script_content)
+    print("✅ Файл bot.js создан")
+
+# ---------------------------
+# 4. Запуск бота
+# ---------------------------
+def run_bot():
+    print("🚀 Запускаем бота... (для остановки нажмите Ctrl+C)")
+    # Запускаем node в том же процессе, чтобы видеть вывод
+    subprocess.run(["node", "bot.js"])
+
+# ---------------------------
+# Главная функция
+# ---------------------------
+if __name__ == "__main__":
+    install_node_via_nvm()
+    install_npm_packages()
+    create_bot_script()
+    run_bot()
